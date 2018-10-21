@@ -68,3 +68,33 @@
     service:
       name: rabbitmq-server
       state: restarted
+
+#-------------------------
+#
+# Celery Block
+#
+#-------------------------
+
+  - name: "Install or Check For pip2 & pip3"
+    apt:
+      update_cache: yes
+      name: "{{ packages }}"
+      state: present
+    vars:
+      packages:
+        - python-pip
+        - python3-pip
+
+  - name: "Update pip2 & pip3"
+    pip:
+      name: pip
+      extra_args: --upgrade
+      executable: "{{ item }}"
+    with_items:
+      - pip
+      - pip3
+
+  - name: "Install Celery"
+    pip:
+      name: celery
+      state: latest
