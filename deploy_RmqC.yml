@@ -12,11 +12,18 @@
 
   tasks:
 
+#-------------------------
+#
+# Hostname Block
+#
+#-------------------------
+
   - name: "Setup VM HostName - [1] Set HostName"
     hostname:
       name: "{{ new_hostname }}"
 
   - name: "Setup VM HostName - [2] Add HostName to /etc/hosts"
+    become: yes
     template:
       src: ./hosts.j2
       dest: /etc/hosts
@@ -30,6 +37,12 @@
       path: /etc/hosts
       regexp: '[a-z]*-*[a-z]*'
       replace: "{{ new_hostname }}"
+
+  - name: "Setup Hostname Persistence"
+    replace:
+      path: /etc/cloud/cloud.cfg
+      regexp: 'preserve_hostname: false'
+      replace: 'preserve_hostname: yes'
 
 #-------------------------
 #
