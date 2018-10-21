@@ -1,0 +1,70 @@
+---
+- hosts: OpenStack
+  become: yes
+  remote_user: ubuntu
+  gather_facts: no
+  pre_tasks:
+    - name: "Install Python 2"
+      raw: sudo apt-get -y install python
+
+  vars:
+    new_hostname: RmqC-Instance
+
+  tasks:
+
+  - name: "Setup VM HostName - [1] Set HostName"
+    hostname:
+      name: RmqC-Instance
+
+#  - name: "Setup VM HostName - [2] Add HostName to /etc/hosts"
+#    template:
+#      src: ./hosts.j2
+#      dest: /etc/hosts
+#      owner: root
+#      group: root
+#      mode: 0644
+#      force: yes
+
+  - name: "Setup VM HostName - [3] Replace HostName in /etc/hostname"
+    replace:
+      path: /etc/hosts
+      regexp: '[a-z]*-*[a-z]*'
+      replace: 'RmqC-Instance'
+
+#-------------------------
+#
+# Rabbitmq Block
+#
+#-------------------------
+
+  - name: "Add Rabbitmq Repo Signing Key"
+    apt_key:
+      url: https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc
+      state: present
+
+  - name: "Add Bintray Erlang Source List File"
+    apt_repository:
+      repo: deb http://dl.bintray.com/rabbitmq/debian bionic erlang
+      state: present
+      filename: bintray.erlang.list
+
+  - name: "Add Bintray Rabbitmq Source List File"
+    apt_repository:
+      repo: deb https://dl.bintray.com/rabbitmq/debian bionic main
+      state: present
+      filename: bintray.rabbitmq.list
+
+  - name: "Install Erlang & Rabbitmq"
+    apt:
+      update_cache: yes
+      name: "{{ packages }}"
+      state: present
+    vars:
+      packages:
+        - erlang-nox
+        - rabbitmq-server
+
+  - name: "Start Rabbitmq Server"
+    service:
+      name: rabbitmq-server
+      state: restarted
