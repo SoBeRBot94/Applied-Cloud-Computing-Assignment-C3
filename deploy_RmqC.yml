@@ -16,14 +16,14 @@
     hostname:
       name: RmqC-Instance
 
-#  - name: "Setup VM HostName - [2] Add HostName to /etc/hosts"
-#    template:
-#      src: ./hosts.j2
-#      dest: /etc/hosts
-#      owner: root
-#      group: root
-#      mode: 0644
-#      force: yes
+  - name: "Setup VM HostName - [2] Add HostName to /etc/hosts"
+    template:
+      src: ./hosts.j2
+      dest: /etc/hosts
+      owner: root
+      group: root
+      mode: 0644
+      force: yes
 
   - name: "Setup VM HostName - [3] Replace HostName in /etc/hostname"
     replace:
