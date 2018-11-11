@@ -111,3 +111,7 @@
     pip:
       name: celery
       state: latest
+      executable: "{{ item }}"
+    with_items:
+      - pip
+      - pip3  
