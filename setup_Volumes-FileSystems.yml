@@ -1,0 +1,55 @@
+---
+- hosts: OpenStack
+  become: yes
+  remote_user: ubuntu
+  gather_facts: no
+  pre_tasks:
+    - name: "Install Python 2"
+      raw: sudo apt-get -y install python
+
+  tasks:
+
+#-------------------------
+#
+# Initial Setup & FileSystem Creation
+#
+#-------------------------
+
+  - name: "Create The Mount Point"
+    file:
+      path: /home/ubuntu/DATA
+      owner: ubuntu
+      group: ubuntu
+      state: directory
+      mode: 0755
+
+  - name: "Create FileSystem On The Block Device"
+    filesystem:
+      fstype: ext4
+      dev: /dev/vdb
+
+#-------------------------
+#
+# Mount Created FileSystem
+#
+#-------------------------
+
+  - name: "Mount The FileSystem"
+    mount:
+      path: /home/ubuntu/DATA
+      src: /dev/vdb
+      fstype: ext4
+      state: mounted
+
+  - name: "Change Ownership Of The FileSystem"
+    file:
+      path: /home/ubuntu/DATA
+      recurse: yes
+      owner: ubuntu
+      group: ubuntu
+      state: directory
+
+  - name: "Remove lost+found Directory"
+    file:
+      path: /home/ubuntu/DATA/lost+found
+      state: absent
