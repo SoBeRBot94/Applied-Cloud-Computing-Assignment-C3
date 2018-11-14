@@ -53,3 +53,28 @@
     file:
       path: /home/ubuntu/DATA/lost+found
       state: absent
+
+#-------------------------
+#
+# Secure Copy JSON Data Archive & Extract It
+#
+#-------------------------
+
+  - name: "SCP JSON Data Archive"
+    copy:
+      src: ./data.tar.gz
+      dest: /home/ubuntu/DATA/data.tar.gz
+      owner: ubuntu
+      group: ubuntu
+      mode: 0644
+
+  - name: "Extract The Archive"
+    unarchive:
+      src: /home/ubuntu/DATA/data.tar.gz
+      dest: /home/ubuntu/DATA
+      remote_src: yes
+
+  - name: "Remove The Archive"
+    file:
+      path: /home/ubuntu/DATA/data.tar.gz
+      state: absent
