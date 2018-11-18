@@ -1,0 +1,138 @@
+---
+- hosts: OpenStack
+  become: yes
+  remote_user: ubuntu
+  gather_facts: no
+  pre_tasks:
+    - name: "Install Python 2"
+      raw: sudo apt-get -y install python
+
+  vars:
+    new_hostname: RmqC-Instance
+
+  tasks:
+
+#-------------------------
+#
+# Hostname Block
+#
+#-------------------------
+
+  - name: "Setup VM HostName - [1] Set HostName"
+    hostname:
+      name: "{{ new_hostname }}"
+
+  - name: "Setup VM HostName - [2] Add HostName to /etc/hosts"
+    become: yes
+    template:
+      src: ./hosts.j2
+      dest: /etc/hosts
+      owner: root
+      group: root
+      mode: 0644
+      force: yes
+
+  - name: "Setup VM HostName - [3] Replace HostName in /etc/hostname"
+    replace:
+      path: /etc/hosts
+      regexp: '[a-z]*-*[a-z]*'
+      replace: "{{ new_hostname }}"
+
+  - name: "Setup Hostname Persistence"
+    replace:
+      path: /etc/cloud/cloud.cfg
+      regexp: 'preserve_hostname: false'
+      replace: 'preserve_hostname: yes'
+
+#-------------------------
+#
+# Rabbitmq Block
+#
+#-------------------------
+
+  - name: "Add Rabbitmq Repo Signing Key"
+    apt_key:
+      url: https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc
+      state: present
+
+  - name: "Add Bintray Erlang Source List File"
+    apt_repository:
+      repo: deb http://dl.bintray.com/rabbitmq/debian bionic erlang
+      state: present
+      filename: bintray.erlang.list
+
+  - name: "Add Bintray Rabbitmq Source List File"
+    apt_repository:
+      repo: deb https://dl.bintray.com/rabbitmq/debian bionic main
+      state: present
+      filename: bintray.rabbitmq.list
+
+  - name: "Install Erlang & Rabbitmq"
+    apt:
+      update_cache: yes
+      name: "{{ packages }}"
+      state: present
+    vars:
+      packages:
+        - erlang-nox
+        - rabbitmq-server
+
+  - name: "Start Rabbitmq Server"
+    service:
+      name: rabbitmq-server
+      state: restarted
+
+#-------------------------
+#
+# Redis Block
+#
+#-------------------------
+
+  - name: "Install Redis"
+    apt:
+      update_cache: yes
+      name: "{{ packages }}"
+      state: present
+    vars:
+      packages:
+        - redis
+        - redis-tools
+
+  - name: "Start Redis Server"
+    service:
+      name: redis-server
+      state: restarted
+
+#-------------------------
+#
+# Celery Block
+#
+#-------------------------
+
+  - name: "Install or Check For pip2 & pip3"
+    apt:
+      update_cache: yes
+      name: "{{ packages }}"
+      state: present
+    vars:
+      packages:
+        - python-pip
+        - python3-pip
+
+  - name: "Update pip2 & pip3"
+    pip:
+      name: pip
+      extra_args: --upgrade
+      executable: "{{ item }}"
+    with_items:
+      - pip
+      - pip3
+
+  - name: "Install Celery"
+    pip:
+      name: celery
+      state: latest
+      executable: "{{ item }}"
+    with_items:
+      - pip
+      - pip3  
