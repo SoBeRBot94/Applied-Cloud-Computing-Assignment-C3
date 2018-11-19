@@ -1,0 +1,82 @@
+---
+- hosts: OpenStack
+  become: yes
+  remote_user: ubuntu
+  gather_facts: no
+  pre_tasks:
+    - name: "Install Python 2"
+      raw: sudo apt-get -y install python
+
+  tasks:
+
+#-------------------------
+#
+# Requirements Block
+#
+#-------------------------
+
+  - name: "Install Python Modules"
+    pip:
+      name: "{{ item }}"
+      state: latest
+      executable: pip3
+    with_items:
+      - flask
+      - redis
+
+  - name: "Install Supervisor"
+    apt:
+      name: "{{ item }}"
+      state: present
+      update_cache: yes
+    with_items:
+      - supervisor
+
+  - name: "Create Supervisor Log Directory"
+    file:
+      path: /var/log/supervisor
+      state: directory
+
+  - name: "Start Supervisor Service"
+    service:
+      name: supervisor
+      state: restarted
+
+#-------------------------
+#
+# Deplyment Block
+#
+#-------------------------
+
+  - name: "SCP the Application Files"
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: ubuntu
+      group: ubuntu
+      mode: 0744
+    with_items:
+      - { src: './server.py', dest: '/home/ubuntu/server.py' }
+      - { src: './tasks.py', dest: '/home/ubuntu/tasks.py' }
+
+  - name: "SCP the Application Files"
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: root
+    with_items:
+      - { src: './celery.conf', dest: '/etc/supervisor/conf.d/celery.conf' }
+      - { src: './flaskApp.conf', dest: '/etc/supervisor/conf.d/flaskApp.conf' }
+
+  - name: "Reread Supervisor Config Files"
+    command: supervisorctl reread
+
+  - name: "Start Celery"
+    supervisorctl:
+      name: celeryApp
+      state: started
+
+  - name: "Start Flask Server"
+    supervisorctl:
+      name: flaskApp
+      state: started

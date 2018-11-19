@@ -84,6 +84,27 @@
 
 #-------------------------
 #
+# Redis Block
+#
+#-------------------------
+
+  - name: "Install Redis"
+    apt:
+      update_cache: yes
+      name: "{{ packages }}"
+      state: present
+    vars:
+      packages:
+        - redis
+        - redis-tools
+
+  - name: "Start Redis Server"
+    service:
+      name: redis-server
+      state: restarted
+
+#-------------------------
+#
 # Celery Block
 #
 #-------------------------
